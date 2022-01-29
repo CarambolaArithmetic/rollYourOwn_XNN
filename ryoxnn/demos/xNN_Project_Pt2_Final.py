@@ -1,18 +1,10 @@
 ################################################################################
-#
-#    Ian Gonthier
-#    ixg130630
-#
 # INSTRUCTIONS
 #
-#    1. Go to Google Colaboratory: https://colab.research.google.com/notebooks/welcome.ipynb
-#    2. File - New Python 3 notebook
-#    3. Cut and paste this file into the cell (feel free to divide into multiple cells)
-#    4. Runtime - Run all
+#    <TODO: provide correct instructions here>
 #
 #DESCRIPTION
-#  This file implements a Convolutional neural network. However, due to issues with training and testing
-#   the architecture described in the project document, this implements a smaller one for which training is more apparent
+#  This file implements a Convolutional neural network.
 #   it uses a flat learning rate, with stochastic batches of 2 images selected at each iteration via sample-with-replacement.
 #   in order to improve training speed, the network uses different learning rates for each layer,
 #   with lower layers having higher learning rates to speed up their updates while still allowing the overall
@@ -25,7 +17,6 @@
 #  to convolution, including the Convolution, SquareMaxpool and VecFrom4D operations.
 #
 #  this file is structured the same as part 1, with operations, then helper functions, then the part where training occurs.
-
 #   A note about dimensions:
 #       inputs to the convo net are 4th order tensors, of the form:
 #           h x w x c x n
@@ -41,12 +32,6 @@
 # IMPORT
 #
 ################################################################################
-
-#
-# you should not need any import beyond the below
-# PyTorch, TensorFlow, ... is not allowed
-#
-
 import os.path
 import urllib.request
 import gzip
@@ -54,8 +39,6 @@ import math
 import numpy             as np
 import matplotlib.pyplot as plt
 
-####NOTE####
-##I IMPORTED THIS! IN ORDER TO USE A TIMER:
 import time
 
 ################################################################################
@@ -63,10 +46,6 @@ import time
 # PARAMETERS
 #
 ################################################################################
-
-#
-# add other hyper parameters here with some logical organization
-#
 
 # data
 DATA_NUM_TRAIN         = 60000
@@ -136,13 +115,6 @@ file_test_labels   = gzip.open(DATA_FILE_TEST_LABELS, 'r')
 file_test_labels.read(8)
 buffer_test_labels = file_test_labels.read(DATA_NUM_TEST)
 test_labels        = np.frombuffer(buffer_test_labels, dtype=np.uint8).astype(np.int32)
-
-################################################################################
-#
-# MY CODE GOES HERE
-#
-################################################################################
-
 
 #OPERATION DEFINITIONS##########################################################
 
@@ -818,78 +790,3 @@ trainSpecs = trainNetwork(network, learningRate,
              labelsTensor = L,
              inputsTensor = X)
 checkConvoAccuracy(network, X, L, test_data, test_labels)
-################################################################################
-#
-# DISPLAY
-#
-################################################################################
-learningtime = trainSpecs["time"]
-epochAccs = trainSpecs["epochAccs"]
-batchErrors = trainSpecs["batchErr"]
-batchAccs = trainSpecs["batchAccs"]
-allAccs = trainSpecs["allAccs"]
-#
-# more code for you to write
-#
-
-print("-NETWORK STATS--------------------------------------------")
-# accuracy display
-# final accuracy
-print("Final accuracy: " + str(epochAccs[-1]))
-#This was supposed to be accuracy v epoch, but i used so few epochs that i turned it into batch
-#both serve the same purpose
-# plot of accuracy vs batch
-fig = plt.figure(figsize=(4, 4))
-figg = fig.add_subplot(1,1,1)
-figg.set_title("loss of each batch")
-figg.set_xlabel("batch")
-figg.set_ylabel("loss")
-plt.scatter(range(len(batchErrors)),batchErrors)
-x1,x2,y1,y2 = plt.axis()
-plt.axis((x1,x2,0,y2))
-plt.show()
-if(len(batchAccs[0]) > 1):
-    fig = plt.figure(figsize=(4, 4))
-    figg = fig.add_subplot(1, 1, 1)
-    figg.set_title("train accuracy for each 200 batches")
-    figg.set_xlabel("batch")
-    figg.set_ylabel("batch accuracy")
-    plt.plot(batchAccs[0], batchAccs[1])
-    x1, x2, y1, y2 = plt.axis()
-    plt.axis((x1, x2, 0, y2))
-    plt.show()
-if (len(allAccs[0]) > 1):
-    fig = plt.figure(figsize=(4, 4))
-    figg = fig.add_subplot(1, 1, 1)
-    figg.set_title("overall test accuracy for every 2000 batches")
-    figg.set_xlabel("batch")
-    figg.set_ylabel("test accuracy")
-    plt.plot(allAccs[0], allAccs[1])
-    x1, x2, y1, y2 = plt.axis()
-    plt.axis((x1, x2, 0, y2))
-    plt.show()
-# performance display
-
-# total time
-#pyplot for this seems unecessary
-print("Total time: " + str(learningtime))
-
-# example display
-# replace the xNN predicted label with the label predicted by the network
-labels = np.eye(DATA_CLASSES)[test_labels]
-readyLabels, readyInputs = convoPreproc(test_data, labels)
-X.set(readyInputs)
-L.set(readyLabels)
-network.clear()
-network.getNetHead().fwd()
-predictions = network.getNetHead().getPredictions()
-
-fig = plt.figure(figsize=(DISPLAY_COL_IN, DISPLAY_ROW_IN))
-ax  = []
-readyLabels = np.argmax(readyLabels, axis=0)
-for i in range(DISPLAY_NUM):
-    img = test_data[i, :, :, :].reshape((DATA_ROWS, DATA_COLS))
-    ax.append(fig.add_subplot(DISPLAY_ROWS, DISPLAY_COLS, i + 1))
-    ax[-1].set_title('True: ' + str(readyLabels[i]) + ' xNN: ' + str(predictions[i]))
-    plt.imshow(img, cmap='Greys')
-plt.show()
