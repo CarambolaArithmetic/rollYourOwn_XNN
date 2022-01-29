@@ -37,7 +37,6 @@ import urllib.request
 import gzip
 import math
 import numpy             as np
-import matplotlib.pyplot as plt
 
 import time
 
