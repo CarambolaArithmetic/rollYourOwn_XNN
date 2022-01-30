@@ -1,4 +1,7 @@
-import numpy as np 
+try:
+        import cupy as np
+except ImportError:
+        import numpy as np
 from .math import  *
 
 #Graph Node. Caches the value of the calculation made in the forward pass in self.value
@@ -144,7 +147,7 @@ class ReLu(Node):
         super().__init__(["A"])
     def _forward(self):
         matt = self.A.fwd()
-        return np.max([matt, np.zeros(matt.shape)], axis=0)
+        return np.max(np.array([matt, np.zeros(matt.shape)]), axis=0)
     def _back(self, deL):
         self.A.back(lambda: deL * np.where(self.value > 0, 1, 0))
 
@@ -157,7 +160,7 @@ class LeakyReLu(Node):
         super().__init__(["A"])
     def _forward(self):
         matt = self.A.fwd()
-        return np.max([matt, 0.1*np.ones(matt.shape)], axis=0)
+        return np.max(np.array([matt, 0.1*np.ones(matt.shape)]), axis=0)
     def _back(self, deL):
         self.A.back(lambda: deL * np.where(self.value > 0, 1, 0.1))
 

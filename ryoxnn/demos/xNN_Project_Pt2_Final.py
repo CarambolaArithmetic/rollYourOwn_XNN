@@ -36,7 +36,11 @@ import os.path
 import urllib.request
 import gzip
 import math
-import numpy             as np
+try:
+        import cupy as np
+except ImportError:
+        import numpy as np
+import numpy
 from ryoxnn.node import *
 from ryoxnn.network import *
 
@@ -76,6 +80,13 @@ DISPLAY_NUM    = DISPLAY_ROWS*DISPLAY_COLS
 # DATA
 #
 ################################################################################
+def frombuffer(*args, **kwargs):
+    """Interpret a buffer as a 1-dimensional array.
+    .. note::
+        Uses NumPy's ``frombuffer`` and coerces the result to a CuPy array.
+    .. seealso:: :func:`numpy.frombuffer`
+    """
+    return np.asarray(numpy.frombuffer(*args, **kwargs))
 
 # download
 if (os.path.exists(DATA_FILE_TRAIN_DATA)   == False):
@@ -92,7 +103,7 @@ if (os.path.exists(DATA_FILE_TEST_LABELS)  == False):
 file_train_data   = gzip.open(DATA_FILE_TRAIN_DATA, 'r')
 file_train_data.read(16)
 buffer_train_data = file_train_data.read(DATA_NUM_TRAIN*DATA_ROWS*DATA_COLS)
-train_data        = np.frombuffer(buffer_train_data, dtype=np.uint8).astype(np.float32)
+train_data        = frombuffer(buffer_train_data, dtype=np.uint8).astype(np.float32)
 train_data        = train_data.reshape(DATA_NUM_TRAIN, 1, DATA_ROWS, DATA_COLS)
 
 # training labels
@@ -100,14 +111,14 @@ train_data        = train_data.reshape(DATA_NUM_TRAIN, 1, DATA_ROWS, DATA_COLS)
 file_train_labels   = gzip.open(DATA_FILE_TRAIN_LABELS, 'r')
 file_train_labels.read(8)
 buffer_train_labels = file_train_labels.read(DATA_NUM_TRAIN)
-train_labels        = np.frombuffer(buffer_train_labels, dtype=np.uint8).astype(np.int32)
+train_labels        = frombuffer(buffer_train_labels, dtype=np.uint8).astype(np.int32)
 
 # testing data
 # unzip the file, skip the header, read the rest into a buffer and format to NCHW
 file_test_data   = gzip.open(DATA_FILE_TEST_DATA, 'r')
 file_test_data.read(16)
 buffer_test_data = file_test_data.read(DATA_NUM_TEST*DATA_ROWS*DATA_COLS)
-test_data        = np.frombuffer(buffer_test_data, dtype=np.uint8).astype(np.float32)
+test_data        = frombuffer(buffer_test_data, dtype=np.uint8).astype(np.float32)
 test_data        = test_data.reshape(DATA_NUM_TEST, 1, DATA_ROWS, DATA_COLS)
 
 # testing labels
@@ -115,7 +126,7 @@ test_data        = test_data.reshape(DATA_NUM_TEST, 1, DATA_ROWS, DATA_COLS)
 file_test_labels   = gzip.open(DATA_FILE_TEST_LABELS, 'r')
 file_test_labels.read(8)
 buffer_test_labels = file_test_labels.read(DATA_NUM_TEST)
-test_labels        = np.frombuffer(buffer_test_labels, dtype=np.uint8).astype(np.int32)
+test_labels        = frombuffer(buffer_test_labels, dtype=np.uint8).astype(np.int32)
 
 ################################################################################
 #HELPER FUNCTIONS###############################################################
@@ -304,8 +315,9 @@ def checkConvoAccuracy(network, mX, mL, datas, labels):
         network.getNetHead().fwd()
         predictions = network.getNetHead().getPredictions()
         acc.append(accuracy(outputLabels, predictions))
-    print("ACCURACY: " + str(np.mean(acc)))
-    return np.mean(acc)
+    acc_arr = np.array(acc)
+    print("ACCURACY: " + str(np.mean(acc_arr)))
+    return np.mean(acc_arr)
 
 #END HELPER FUNCTIONS###########################################################
 ################################################################################

@@ -1,4 +1,7 @@
-import numpy as np 
+try:
+        import cupy as np
+except ImportError:
+        import numpy as np
 
 #padded an array? unpad it with THIS!
 #note: must be square in the first two dims
