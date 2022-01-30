@@ -68,6 +68,7 @@ class Node:
 class Tensor:
     def __init__(self, A = np.empty([]), updateRule = lambda x, y: x - y):
         self.value = A
+        self.internalValue = self.value
         self.updateRule = updateRule
 
     #this was an attempt at a performance increase to reduce unneeded operations,
@@ -85,19 +86,20 @@ class Tensor:
     # it is the sum of these deLs that provides the true gradient, not each
     # individual one.
     def back(self, getDeL):
-        if self.value.size == 0:
+        if self.internalValue.size == 0:
             raise Exception("tensor is unset!")
         if self.updateRule != None:
             deLVal = getDeL()
-            self.value = self.updateRule(self.value, deLVal)
+            self.internalValue = self.updateRule(self.internalValue, deLVal)
 
     #Tensors often need to have their internal values changed after initialization.
     #example: inputs to the networks, labels.
     def set(self,A):
         self.value = A
+        self.internalValue = self.value
     def clear(self):
-        #the value we hold is not the cached result of an operation
-        #so don't clear it when asked
+        #update our exposed value to reflect backward pass changes
+        self.value = self.internalValue
         return
 
 #Node that implements basic matrix multiplication
