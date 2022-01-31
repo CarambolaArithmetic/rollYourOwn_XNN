@@ -162,7 +162,7 @@ def trainNetwork(network, learningRate, numEpochs, doTensorUpdate, labelsTensor,
     oldEpochEndTime = startTime
     print("starting training...")
     for j in range(numEpochs):
-        for k in range(DATA_NUM_TRAIN//4):
+        for k in range(DATA_NUM_TRAIN):
 
             #update input/label tensors
             doTensorUpdate()
@@ -254,19 +254,19 @@ def genTestCNNNet(inputs, labels):
 
 #for 10000: 0.0375
 def genCNNNet(inputs,labels):
-    CN1 = Tensor(0.01*np.random.rand(3,3,1,16), updateRule = lambda x, y: x-np.clip(y, -0.0001,0.0001))
-    B1 = Tensor(0.01*np.random.rand(28,28,16), updateRule = lambda x, y: x-np.clip(y, -0.0001,0.0001))
+    CN1 = Tensor(0.01*np.random.rand(3,3,1,16), updateRule = lambda x, y: x-y)
+    B1 = Tensor(0.01*np.random.rand(28,28,16), updateRule = lambda x, y: x-y)
 
-    CN2 = Tensor(0.01*np.random.rand(3,3,16,32), updateRule = lambda x, y: x-np.clip(y, -0.0001,0.0001))
+    CN2 = Tensor(0.01*np.random.rand(3,3,16,32), updateRule = lambda x, y: x-y)
     #todo: should be 14,14,32
-    B2 = Tensor(0.01*np.random.rand(15,15,32), updateRule = lambda x, y: x-np.clip(y, -0.0001,0.0001))
+    B2 = Tensor(0.01*np.random.rand(15,15,32), updateRule = lambda x, y: x-y)
 
-    CN3 = Tensor(0.01*np.random.rand(3,3,32,64),  updateRule = lambda x, y: x-np.clip(y, -0.0001,0.0001))
-    B3 = Tensor(0.01*np.random.rand(7,7,64),  updateRule = lambda x, y: x-np.clip(y, -0.0001,0.0001))
+    CN3 = Tensor(0.01*np.random.rand(3,3,32,64),  updateRule = lambda x, y: x-y)
+    B3 = Tensor(0.01*np.random.rand(7,7,64),  updateRule = lambda x, y: x-y)
 
     #why 3137 and 101 instead of 3136 and 100? because bias
-    W1 = Tensor(0.01*np.random.rand(100,3137), updateRule = lambda x, y: x-np.clip(y,-0.0001,0.0001))
-    W2 = Tensor(0.01*np.random.rand(10,101), updateRule = lambda x, y: x-np.clip(y, -0.0001,0.0001))
+    W1 = Tensor(0.01*np.random.rand(100,3137), updateRule = lambda x, y: x-y)
+    W2 = Tensor(0.01*np.random.rand(10,101), updateRule = lambda x, y: x-y)
 
     #acc = accumulator
     acc = Convolve(inputs,CN1,1,28)
