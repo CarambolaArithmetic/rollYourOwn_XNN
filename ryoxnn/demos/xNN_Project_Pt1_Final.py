@@ -146,7 +146,7 @@ def accuracy(one_hot_labels, integer_class_predictions):
 #   Calculate in 100 data increments because excessive size is a problem
 #   for some things that i have implemented (convolution, specifically, einsum doesn't like big args)
 #   and I wanted it to work for both.
-def allDataAccuracy(network, iinput_tensor, label_tensor):
+def allDataAccuracy(network, input_tensor, label_tensor):
     acc = []
     subacc_size = 100
     for i in range(0, DATA_NUM_TEST//subacc_size):
@@ -157,7 +157,7 @@ def allDataAccuracy(network, iinput_tensor, label_tensor):
 
         inputs = test_data[start:end]
         ready_labels, ready_inputs = preproc(inputs, labels)
-        iinput_tensor.set(ready_inputs)
+        input_tensor.set(ready_inputs)
         label_tensor.set(ready_labels)
 
         #calculate outputs and get predictions
