@@ -159,10 +159,10 @@ def trainNetwork(network, learning_rate, num_epochs, do_tensor_update, labels_te
         return 100 * np.average((np.max(arra, axis = 0)/np.sum(arra, axis = 0)))
     i = 0
 
-    startTime = time.perf_counter()
-    oldEpochEndTime = startTime
+    start_time = time.perf_counter()
+    oldEpochEndTime = start_time
     print("starting training...")
-    for j in range(numEpochs):
+    for j in range(num_epochs):
         for k in range(DATA_NUM_TRAIN):
 
             #update input/label tensors
@@ -253,7 +253,6 @@ def genTestCNNNet(inputs, labels):
     network = ErrorWithNormalizationTerms(acc, 0.02)
     return network
 
-#for 10000: 0.0375
 def genCNNNet(inputs,labels):
 
     CN1 = Tensor(0.01*np.random.rand(3,3,1,16), updateRule = lambda x, y: x-y)
