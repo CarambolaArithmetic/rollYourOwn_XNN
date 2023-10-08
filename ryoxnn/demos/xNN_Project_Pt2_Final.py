@@ -13,10 +13,8 @@
 #
 #  Like the NN in part 1, the network definition relies on a set of classes which each implement
 #  a forward/backward definition for the associated operations and are capable of backpropogating their error to their children.
-#  all of the operations from part 1 are included here. Additionally included are several operations specific
-#  to convolution, including the Convolution, SquareMaxpool and VecFrom4D operations.
 #
-#  this file is structured the same as part 1, with operations, then helper functions, then the part where training occurs.
+#  This file is structured the same as part 1, with helper functions followed by the part where training occurs.
 #   A note about dimensions:
 #       inputs to the convo net are 4th order tensors, of the form:
 #           h x w x c x n
@@ -38,7 +36,9 @@ import gzip
 import math
 try:
         import cupy as np
+        print("Cupy loaded, using gpu-optimized numpy operations!")
 except ImportError:
+        print("Unable to load cupy, using standard numpy as fallback...")
         import numpy as np
 import numpy
 from ryoxnn.node import *
@@ -131,33 +131,34 @@ test_labels        = frombuffer(buffer_test_labels, dtype=np.uint8).astype(np.in
 ################################################################################
 #HELPER FUNCTIONS###############################################################
 
-#accuracy measurement. one hot labels because its convenient,
-#not because its efficient
-def accuracy(oneHotLabels, integerClassPredictions):
-    oneIfTrue = np.where(np.equal(np.argmax(oneHotLabels, axis = 0), integerClassPredictions), 1, 0)
-    return 100*sum(oneIfTrue)/oneIfTrue.shape[0]
+#Accuracy measurement. one hot labels because its convenient,
+#   not because its efficient
+def accuracy(one_hot_labels, integer_class_predictions):
+    one_if_true = np.where(np.equal(np.argmax(one_hot_labels, axis = 0), integer_class_predictions), 1, 0)
+    return 100*sum(one_if_true)/one_if_true.shape[0]
 
 
-#trains the network passed as the network arg.
+#Trains the network passed as the network arg.
 #params:
-# network: network to train
-# learningRate: the learning rate
-# shouldStop: lambda(x), true if training should stop
-# doTensorUpdate: updates input and label tensor
-# labelsTensor: the labels tensor
-def trainNetwork(network, learningRate, numEpochs, doTensorUpdate, labelsTensor, inputsTensor):
-    learningData = {}
-    learningData["batchErr"] = []
-    learningData["epochAccs"] = []
-    learningData["time"] = 0
-    learningData["batchAccs"] = [[],[]]
-    learningData["allAccs"] = [[],[]]
-    #measure of how strong predictions are. this should increase as training goes along
-    #decreasing means something is wrong; that the classifier is regressing to the mean
-    #this tends to happen if the backprop is wrong.
+#   network: network to train
+#   learning_rate: the learning rate
+#   should_stop: lambda(x), true if training should stop
+#   do_tensor_update: updates input and label tensor
+#   labels_tensor: the labels tensor
+def trainNetwork(network, learning_rate, num_epochs, do_tensor_update, labels_tensor, inputs_tensor):
+    learning_data = {}
+    learning_data["batchErr"] = []
+    learning_data["epochAccs"] = []
+    learning_data["time"] = 0
+    learning_data["batchAccs"] = [[],[]]
+    learning_data["allAccs"] = [[],[]]
+    #Measure of how strong predictions are. This should increase as training goes along -- 
+    #   decreasing means something is wrong; that the classifier is regressing to the mean.
+    #   this tends to happen if the backprop is wrong.
     def certainty(arra):
         return 100 * np.average((np.max(arra, axis = 0)/np.sum(arra, axis = 0)))
     i = 0
+
     startTime = time.perf_counter()
     oldEpochEndTime = startTime
     print("starting training...")
@@ -165,46 +166,46 @@ def trainNetwork(network, learningRate, numEpochs, doTensorUpdate, labelsTensor,
         for k in range(DATA_NUM_TRAIN):
 
             #update input/label tensors
-            doTensorUpdate()
-            print("ERROR at iteration " + str(i) + ": " + str(network.pureError()))
+            do_tensor_update()
+            print("ERROR at iteration " + str(i) + ": " + str(network.pure_error()))
             if i%200 == 0:
-                print("    certainty: " + str(certainty(network.getNetHead().getSoftmax())))
-                batchAccuracy = accuracy(labelsTensor.fwd(),network.getNetHead().getPredictions())
-                learningData["batchAccs"][0].append(i)
-                learningData["batchAccs"][1].append(batchAccuracy)
-                print("    accuracy on batch: " + str(batchAccuracy))
+                print("    certainty: " + str(certainty(network.get_net_head().getSoftmax())))
+                batch_accuracy = accuracy(labels_tensor.fwd(),network.get_net_head().getPredictions())
+                learning_data["batchAccs"][0].append(i)
+                learning_data["batchAccs"][1].append(batch_accuracy)
+                print("    accuracy on batch: " + str(batch_accuracy))
 
-            learningData["batchErr"].append(network.pureError())
+            learning_data["batchErr"].append(network.pure_error())
 
             #update the weights.
-            network.propogateError(learningRate(i))
+            network.propogate_error(learning_rate(i))
 
-            #tell network nodes to clear their cached values, or at least replace them with a new value
+            #tell network nodes to finalize their cached values, or at least replace them with a new value
             #next time they are needed.
-            network.clear()
+            network.finalize()
             if i+1%10000 == 0:
-                allAccuracy = checkConvoAccuracy(network, X,L, test_data,test_labels)
-                learningData["allAccs"][0].append(i)
-                learningData["allAccs"][1].append(allAccuracy)
+                all_accuracy = checkConvoAccuracy(network, X,L, test_data,test_labels)
+                learning_data["allAccs"][0].append(i)
+                learning_data["allAccs"][1].append(all_accuracy)
                 print("---")
-                print("Test Accuracy " + str(allAccuracy))
+                print("Test Accuracy " + str(all_accuracy))
                 print("---")
-                network.clear()
+                network.finalize()
             i = i+1
         acc = checkConvoAccuracy(network, X,L, test_data,test_labels)
         print()
-        print("accuracy after epoch " + str(j) + ": " + str(acc) + "%")
-        epochEndTime = time.perf_counter()
-        print("epoch took " + str(epochEndTime - oldEpochEndTime) + " seconds")
+        print("Accuracy after epoch " + str(j) + ": " + str(acc) + "%")
+        epoch_end_time = time.perf_counter()
+        print("Epoch took " + str(epoch_end_time - old_epoch_end_time) + " seconds")
         print()
-        oldEpochEndTime = epochEndTime
-        learningData["epochAccs"].append(acc)
+        old_epoch_end_time = epoch_end_time
+        learning_data["epochAccs"].append(acc)
 
     #set end timer, store value for display
-    endTime = time.perf_counter()
-    learningData["time"] = endTime-startTime
-    print("total train time time: " + str(endTime-startTime) + " seconds.")
-    return learningData
+    end_time = time.perf_counter()
+    learning_data["time"] = end_time-start_time
+    print("total train time time: " + str(end_time-start_time) + " seconds.")
+    return learning_data
 
 
 #set the values of the tensors A and B.
@@ -226,20 +227,20 @@ def genConvoBatch(batchSize, inputs, labels):
 def genTestCNNNet(inputs, labels):
     #significantly increasing the learning rates of the lower layers improves training speed,
     #clipping the gradient imporoves network stability (which is terrible in general)
-    CN1 = Tensor(0.01*np.random.rand(3,3,1,32), updateRule = lambda x, y: x-np.clip(1000*y,-0.0001,0.0001))
-    B1 = Tensor(0.01*np.random.rand(28,28,32), updateRule = lambda x, y: x-np.clip(1000*y,-0.0001,0.0001))
+    CN1 = Tensor(0.01*np.random.rand(3,3,1,32), update_rule = lambda x, y: x-np.clip(1000*y,-0.0001,0.0001))
+    B1 = Tensor(0.01*np.random.rand(28,28,32), update_rule = lambda x, y: x-np.clip(1000*y,-0.0001,0.0001))
 
-    CN2 = Tensor(0.01*np.random.rand(3,3,32,64), updateRule = lambda x, y: x-np.clip(100*y,-0.0001,0.0001))
-    B2 = Tensor(0.01*np.random.rand(15,15,64), updateRule = lambda x, y: x-np.clip(100*y,-0.0001,0.0001))
+    CN2 = Tensor(0.01*np.random.rand(3,3,32,64), update_rule = lambda x, y: x-np.clip(100*y,-0.0001,0.0001))
+    B2 = Tensor(0.01*np.random.rand(15,15,64), update_rule = lambda x, y: x-np.clip(100*y,-0.0001,0.0001))
 
-    W1 = Tensor(0.01 * np.random.rand(10, 3137), updateRule=lambda x, y: x - np.clip(0.1*y,-0.0001,0.0001))
+    W1 = Tensor(0.01 * np.random.rand(10, 3137), update_rule=lambda x, y: x - np.clip(0.1*y,-0.0001,0.0001))
 
-    acc = Convolve(inputs, CN1,1,28)
+    acc = Conv2D(inputs, CN1,1,28)
     acc = ConvoNetAdd(acc, B1)
     acc = ReLu(acc)
     acc = SquareMaxPool(acc,3,2)
 
-    acc = Convolve(acc, CN2,1,15)
+    acc = Conv2D(acc, CN2,1,15)
     acc = ConvoNetAdd(acc, B2)
     acc = ReLu(acc)
     acc = SquareMaxPool(acc,3,2)
@@ -254,6 +255,7 @@ def genTestCNNNet(inputs, labels):
 
 #for 10000: 0.0375
 def genCNNNet(inputs,labels):
+
     CN1 = Tensor(0.01*np.random.rand(3,3,1,16), updateRule = lambda x, y: x-y)
     B1 = Tensor(0.01*np.random.rand(28,28,16), updateRule = lambda x, y: x-y)
 
@@ -269,17 +271,17 @@ def genCNNNet(inputs,labels):
     W2 = Tensor(0.01*np.random.rand(10,101), updateRule = lambda x, y: x-y)
 
     #acc = accumulator
-    acc = Convolve(inputs,CN1,1,28)
+    acc = Conv2D(inputs,CN1,1,28)
     acc = ConvoNetAdd(acc, B1)
     acc = ReLu(acc)
     acc = SquareMaxPool(acc,3,2)
 
-    acc = Convolve(acc, CN2,1,15)
+    acc = Conv2D(acc, CN2,1,15)
     acc = ConvoNetAdd(acc, B2)
     acc = ReLu(acc)
     acc = SquareMaxPool(acc,3,2)
 
-    acc = Convolve(acc, CN3,1,7)
+    acc = Conv2D(acc, CN3,1,7)
     acc = ConvoNetAdd(acc, B3)
     acc = ReLu(acc)
 
@@ -303,7 +305,7 @@ def checkConvoAccuracy(network, mX, mL, datas, labels):
     acc = []
     subaccSize = 100
     for i in range(0, DATA_NUM_TEST//subaccSize):
-        network.clear()
+        network.finalize()
         start = i * subaccSize
         end = (i + 1) * subaccSize
         print("calculating accuracy for " + str(i*subaccSize))
@@ -312,8 +314,8 @@ def checkConvoAccuracy(network, mX, mL, datas, labels):
         outputLabels, outputInputs = convoPreproc(outputInputs, outputLabels)
         mX.set(outputInputs)
         mL.set(outputLabels)
-        network.getNetHead().fwd()
-        predictions = network.getNetHead().getPredictions()
+        network.get_net_head().fwd()
+        predictions = network.get_net_head().getPredictions()
         acc.append(accuracy(outputLabels, predictions))
     acc_arr = np.array(acc)
     print("ACCURACY: " + str(np.mean(acc_arr)))
@@ -323,12 +325,12 @@ def checkConvoAccuracy(network, mX, mL, datas, labels):
 ################################################################################
 #TRAINING#######################################################################
 
-#create our "placeholder" tensors:
-#inputs, does not get backpropped
-X = Tensor(updateRule = None)
+#Create our "placeholder" tensors:
+#   Inputs, does not get backpropped
+X = Tensor(update_rule = None)
 
-#L for labels, also does not have a backprop rule
-L = Tensor(updateRule = None)
+#L for labels, also does not have a backprop rule.
+L = Tensor(update_rule = None)
 
 
 network = genCNNNet(X,L)
@@ -337,9 +339,9 @@ def learningRate(i):
     a = 0.1/(1+0.0001*i)
     print(a)
     return a
-trainSpecs = trainNetwork(network, learningRate,
+train_specs = trainNetwork(network, learningRate,
              1,
-             doTensorUpdate = lambda: updateTensors(L,X, genConvoBatch(2,train_data,train_labels)),
-             labelsTensor = L,
-             inputsTensor = X)
+             do_tensor_update = lambda: updateTensors(L,X, genConvoBatch(2,train_data,train_labels)),
+             labels_tensor = L,
+             inputs_tensor = X)
 checkConvoAccuracy(network, X, L, test_data, test_labels)
