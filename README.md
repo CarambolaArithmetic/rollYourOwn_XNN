@@ -1,2 +1,3 @@
 # rollYourOwn_XNN
-backprop machine learning library in python, built from scratch
+A toy library for neural network backpropogation written for Python, in Python. 
+See the "demos" directory for examples of it in use.
