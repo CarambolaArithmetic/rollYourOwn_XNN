@@ -4,6 +4,7 @@ except ImportError:
     import numpy as np
 from .math import *
 
+#node.py: Compute graph node definitions. defines tensor operations that can be composed into a neural network and trained using backpropogation.
 
 class Node:
     """
