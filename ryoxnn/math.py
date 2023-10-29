@@ -3,6 +3,7 @@ try:
 except ImportError:
     import numpy as np
 
+# math.py: helper functions 
 
 def get_clipped(square_arr_4d, reduce_by):
     """

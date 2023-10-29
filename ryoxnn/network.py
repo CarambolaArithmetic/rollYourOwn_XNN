@@ -1,6 +1,7 @@
 import numpy as np
 from .math import *
 
+#network.py: network heads.
 
 class ErrorWithNormalizationTerms:
     """
