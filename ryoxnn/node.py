@@ -1,7 +1,8 @@
 try:
-    import cupy as np
+    import cupy as cp
 except ImportError:
-    import numpy as np
+    import numpy as cp
+import numpy as np
 from .math import *
 
 #node.py: Compute graph node definitions. defines tensor operations that can be composed into a neural network and trained using backpropogation.
@@ -18,9 +19,9 @@ class Node:
         """
         Parameters:
         -----------
-        params: 
+        params:
             A list of parameter names to finalize once when finalize() is called on this node.
-        needs_update: 
+        needs_update:
             Whether or not this node (and thus any of its children) needs
             errors propogated to it in the backward pass. This would be false, for
             instance, if all of this node's children were input tensors and not weights.
@@ -43,7 +44,6 @@ class Node:
         self.value = None
         self.set = False
         [self.__dict__[p].finalize() for p in self.params]
-
     def fwd(self):
         """
         Get the forward pass for this node; returning cached value if it exists.
@@ -59,7 +59,7 @@ class Node:
 
         Parameters:
         -----------
-            get_grad: 
+            get_grad:
                 lambda that calculates the gradient from the
                 parent. This avoids having to calculate the gradient unless it is actually needed.
         """
@@ -85,7 +85,7 @@ class Node:
         Parameters:
         -----------
             grad:
-                gradient from parent (np.ndarray, already calculated).
+                gradient from parent (cp.ndarray, already calculated).
         """
         raise Exception("backward unimplemented!")
 
@@ -94,12 +94,12 @@ class Tensor:
     """
     Input tensor.
         Node-like object used for holding a numpy array, for instance weights, input values, labels, etc.
-        implements the same contract as a Node so that parent Nodes can treat it as one. 
+        implements the same contract as a Node so that parent Nodes can treat it as one.
         has its own update rule, which determines how it will update that value when given a
         gradient in the back pass.
     """
 
-    def __init__(self, tensor_val=np.empty([]), update_rule=lambda x, y: x - y):
+    def __init__(self, tensor_val=cp.empty([]), update_rule=lambda x, y: x - y):
         self.value = tensor_val  # value returned on forward pass.
 
         # Used to cache accumulated updates made on backwards pass.
@@ -113,7 +113,7 @@ class Tensor:
 
     def fwd(self):
         """
-        analogous to Node.fwd(), this just returns the value of the Tensor. 
+        analogous to Node.fwd(), this just returns the value of the Tensor.
         """
         if self.value.size == 0:
             raise Exception("tensor is unset!")
@@ -161,7 +161,7 @@ class Matmul(Node):
             tensor_weights:
                 Node of size w x m
 
-            tensor_input 
+            tensor_input
                 Node of size m x n where n is the number of inputs in the batch.
         """
         self.weights = tensor_weights
@@ -169,14 +169,14 @@ class Matmul(Node):
         super().__init__(["weights", "input"])
 
     def _fwd(self):
-        return np.matmul(self.weights.fwd(), self.input.fwd())
+        return cp.matmul(self.weights.fwd(), self.input.fwd())
 
     def _bck(self, grad):
-        self.weights.bck(lambda: np.matmul(
-            grad, np.transpose(self.input.fwd())))
+        self.weights.bck(lambda: cp.matmul(
+            grad, cp.transpose(self.input.fwd())))
         # TODO: this could be more efficient if there were less transpositions.
-        self.input.bck(lambda: np.transpose(
-            np.matmul(np.transpose(grad), self.weights.fwd())))
+        self.input.bck(lambda: cp.transpose(
+            cp.matmul(cp.transpose(grad), self.weights.fwd())))
 
 
 class SoftmaxWithLogit(Node):
@@ -188,7 +188,7 @@ class SoftmaxWithLogit(Node):
         """
         Parameters:
         -----------
-            tensor_input:  
+            tensor_input:
                 Node of size m x n
             tensor_labels:
                 Node of size m x n. bck for it is not called.
@@ -199,9 +199,9 @@ class SoftmaxWithLogit(Node):
         super().__init__(["labels", "input"])
 
     def _fwd(self):
-        self.softmax = np.exp(self.input.fwd()) / \
-            np.sum(np.exp(self.input.fwd()), axis=0)
-        return -np.sum(self.labels.fwd()*np.log(self.softmax), axis=0)
+        self.softmax = cp.exp(self.input.fwd()) / \
+            cp.sum(cp.exp(self.input.fwd()), axis=0)
+        return -cp.sum(self.labels.fwd()*cp.log(self.softmax), axis=0)
 
     def _bck(self, grad):
         # only propogate to Y, because that's coming in from elsewhere in the net.
@@ -217,7 +217,7 @@ class SoftmaxWithLogit(Node):
         """
         Get 1 x n vector containing predicted labels of network input
         """
-        return np.argmax(self.softmax, axis=0)
+        return cp.argmax(self.softmax, axis=0)
 
 
 class ReLu(Node):
@@ -231,10 +231,10 @@ class ReLu(Node):
 
     def _fwd(self):
         matt = self.input.fwd()
-        return np.max(np.array([matt, np.zeros(matt.shape)]), axis=0)
+        return cp.max(cp.array([matt, cp.zeros(matt.shape)]), axis=0)
 
     def _bck(self, grad):
-        self.input.bck(lambda: grad * np.where(self.value > 0, 1, 0))
+        self.input.bck(lambda: grad * cp.where(self.value > 0, 1, 0))
 
 
 class LeakyReLu(Node):
@@ -246,18 +246,18 @@ class LeakyReLu(Node):
         """
         Parameters:
         -----------
-           input: 
-            Node of size m x n  
+           input:
+            Node of size m x n
         """
         self.input = tensor_input
         super().__init__(["input"])
 
     def _fwd(self):
         matt = self.input.fwd()
-        return np.max(np.array([matt, 0.1*np.ones(matt.shape)]), axis=0)
+        return cp.max(cp.array([matt, 0.1*cp.ones(matt.shape)]), axis=0)
 
     def _bck(self, grad):
-        self.input.bck(lambda: grad * np.where(self.value > 0, 1, 0.1))
+        self.input.bck(lambda: grad * cp.where(self.value > 0, 1, 0.1))
 
 
 class Cat(Node):
@@ -272,10 +272,10 @@ class Cat(Node):
     def __init__(self, tensor_input_a, tensor_input_b, axis):
         """
         Parameters:
-        ----------- 
+        -----------
             tensor_input_a:
                 Node of size m x n
-            tensor_input_b: 
+            tensor_input_b:
                 Node of size k x n
 
         """
@@ -287,11 +287,11 @@ class Cat(Node):
 
     def _fwd(self):
         self.splitMarker = self.input_a.fwd().shape[self.axis]
-        return np.concatenate([self.input_a.fwd(), self.input_b.fwd()], axis=self.axis)
+        return cp.concatenate([self.input_a.fwd(), self.input_b.fwd()], axis=self.axis)
 
     def _bck(self, grad):
         # Back pass just splits gradient into two parts, each one of which corresponds with A or B
-        [gradA, gradB] = np.split(grad, [self.splitMarker], axis=self.axis)
+        [gradA, gradB] = cp.split(grad, [self.splitMarker], axis=self.axis)
         self.input_a.bck(lambda: gradA)
         self.input_b.bck(lambda: gradB)
 
@@ -325,7 +325,7 @@ class MatmulWBias(Node):
     def _fwd(self):
         b_shape = list(self.input.fwd().shape)
         b_shape[self.axis] = 1
-        one_vector = Tensor(np.ones(b_shape), None)
+        one_vector = Tensor(cp.ones(b_shape), None)
         # this operation can be defined as a composition of other ones we've already defined! excellent!
         self.output = Matmul(self.weights, Cat(
             self.input, one_vector, self.axis))
@@ -376,13 +376,13 @@ class Conv2D(Node):
         #   when there is multiple inputs:
         #   For he kernel, there's a contraction over n, the number of input (that is, the batch) dimension
         submat = get_strided(img, kernel, stride_length)
-        return np.einsum('hifn,klhicn->klcf', kernel, submat)
+        return cp.einsum('hifn,klhicn->klcf', kernel, submat)
 
     def back_convolve_input(self, img, kernel, stride_length):
         # For the input, there is a contraction over f, the output channel dimension:
 
         submat = get_strided(img, kernel, stride_length)
-        return np.einsum('hicf,klhifn->klcn', kernel, submat)
+        return cp.einsum('hicf,klhifn->klcn', kernel, submat)
 
     def _bck(self, grad):
         # Source for the backprop rules i'm using:
@@ -394,8 +394,8 @@ class Conv2D(Node):
             padded_grad = pad_image(dialated_grad, paddingSize(self.kernel.fwd().shape[0],
                                                                dialated_grad.shape[0],
                                                                self.stride, self.padded_input.shape[0]))
-            flipped_kernel = np.flip(
-                np.flip(self.kernel.fwd(), axis=0), axis=1)
+            flipped_kernel = cp.flip(
+                cp.flip(self.kernel.fwd(), axis=0), axis=1)
             padded_input_grad = self.back_convolve_input(
                 padded_grad, flipped_kernel, 1)
             # gradToXPad is the gradient with respect to the PADDED version of X, so we need to clip off the parts
@@ -473,7 +473,7 @@ class SquareMaxPool(Node):
 
 class VecFrom4D(Node):
     """
-    Node that converts a 4d tensor to a 2d tensor.   
+    Node that converts a 4d tensor to a 2d tensor.
     """
 
     def __init__(self, tensor_input):
@@ -500,9 +500,9 @@ class ConvoNetAdd(Node):
         """
         Parameters:
         -----------
-            tensor_input: 
+            tensor_input:
                 Node of size "height x width x channels x batch (h,w,c,n)"
-            tensor_bias: 
+            tensor_bias:
                 Node of size "height x width x channels (h,w,c)"
         """
         self.input = tensor_input
@@ -511,13 +511,13 @@ class ConvoNetAdd(Node):
 
     def _fwd(self):
         # Get vector of size n
-        ones_vector = np.ones(self.input.fwd().shape[-1])
+        ones_vector = cp.ones(self.input.fwd().shape[-1])
         # Broadcast addition operation over n
-        bias_broadcasted = np.einsum(
+        bias_broadcasted = cp.einsum(
             "hwc,n -> hwcn", self.bias.fwd(), ones_vector)
         return self.input.fwd() + bias_broadcasted
 
     def _bck(self, grad):
         self.input.bck(lambda: grad)
         # collapse grad over n
-        self.bias.bck(lambda: np.sum(grad, axis=-1))
+        self.bias.bck(lambda: cp.sum(grad, axis=-1))

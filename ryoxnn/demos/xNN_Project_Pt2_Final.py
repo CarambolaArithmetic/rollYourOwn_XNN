@@ -11,8 +11,7 @@
 #    This script takes no arguments, when run and it will download training data and begin training.
 #
 # DESCRIPTION
-#  This file implements a Convolutional neural network.
-#   it uses a flat learning rate, with stochastic batches of 2 images selected at each iteration via sample-with-replacement.
+#  This file implements a Convolutional neural network.  it uses a flat learning rate, with stochastic batches of 2 images selected at each iteration via sample-with-replacement.
 #   in order to improve training speed, the network uses different learning rates for each layer,
 #   with lower layers having higher learning rates to speed up their updates while still allowing the overall
 #   learning rate to be small to avoid divergence. The batch size is so small because the convolution operation takes
@@ -281,21 +280,21 @@ def genTestCNNNet(inputs, labels):
 
 def genCNNNet(inputs, labels):
 
-    CN1 = Tensor(0.01*np.random.rand(3, 3, 1, 16), updateRule=lambda x, y: x-y)
-    B1 = Tensor(0.01*np.random.rand(28, 28, 16), updateRule=lambda x, y: x-y)
+    CN1 = Tensor(0.01*np.random.rand(3, 3, 1, 16), update_rule=lambda x, y: x-y)
+    B1 = Tensor(0.01*np.random.rand(28, 28, 16), update_rule=lambda x, y: x-y)
 
     CN2 = Tensor(0.01*np.random.rand(3, 3, 16, 32),
-                 updateRule=lambda x, y: x-y)
+                 update_rule=lambda x, y: x-y)
     # todo: should be 14,14,32
-    B2 = Tensor(0.01*np.random.rand(15, 15, 32), updateRule=lambda x, y: x-y)
+    B2 = Tensor(0.01*np.random.rand(15, 15, 32), update_rule=lambda x, y: x-y)
 
     CN3 = Tensor(0.01*np.random.rand(3, 3, 32, 64),
-                 updateRule=lambda x, y: x-y)
-    B3 = Tensor(0.01*np.random.rand(7, 7, 64),  updateRule=lambda x, y: x-y)
+                 update_rule=lambda x, y: x-y)
+    B3 = Tensor(0.01*np.random.rand(7, 7, 64),  update_rule=lambda x, y: x-y)
 
     # why 3137 and 101 instead of 3136 and 100? because bias
-    W1 = Tensor(0.01*np.random.rand(100, 3137), updateRule=lambda x, y: x-y)
-    W2 = Tensor(0.01*np.random.rand(10, 101), updateRule=lambda x, y: x-y)
+    W1 = Tensor(0.01*np.random.rand(100, 3137), update_rule=lambda x, y: x-y)
+    W2 = Tensor(0.01*np.random.rand(10, 101), update_rule=lambda x, y: x-y)
 
     # acc = accumulator
     acc = Conv2D(inputs, CN1, 1, 28)
@@ -354,28 +353,28 @@ def checkConvoAccuracy(network, mX, mL, datas, labels):
 ################################################################################
 # TRAINING#######################################################################
 
+def demo():
+    # Create our "placeholder" tensors:
+    #   Inputs, does not get backpropped
+    X = Tensor(update_rule=None)
 
-# Create our "placeholder" tensors:
-#   Inputs, does not get backpropped
-X = Tensor(update_rule=None)
-
-# L for labels, also does not have a backprop rule.
-L = Tensor(update_rule=None)
-
-
-network = genCNNNet(X, L)
+    # L for labels, also does not have a backprop rule.
+    L = Tensor(update_rule=None)
 
 
-def learningRate(i):
-    a = 0.1/(1+0.0001*i)
-    print(a)
-    return a
+    network = genCNNNet(X, L)
 
 
-train_specs = trainNetwork(network, learningRate,
-                           1,
-                           do_tensor_update=lambda: updateTensors(
-                               L, X, genConvoBatch(2, train_data, train_labels)),
-                           labels_tensor=L,
-                           inputs_tensor=X)
-checkConvoAccuracy(network, X, L, test_data, test_labels)
+    def learningRate(i):
+        a = 0.1/(1+0.0001*i)
+        print(a)
+        return a
+
+
+    train_specs = trainNetwork(network, learningRate,
+                            1,
+                            do_tensor_update=lambda: updateTensors(
+                                L, X, genConvoBatch(2, train_data, train_labels)),
+                            labels_tensor=L,
+                            inputs_tensor=X)
+    checkConvoAccuracy(network, X, L, test_data, test_labels)
