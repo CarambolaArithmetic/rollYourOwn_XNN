@@ -178,7 +178,7 @@ def trainNetwork(network, learning_rate, num_epochs, do_tensor_update, labels_te
     for j in range(num_epochs):
         #TODO: put back to DATA_NUM_TRAIN
         #for k in range(DATA_NUM_TRAIN):
-        for k in range(5000):
+        for k in range(10000):
 
             # update input/label tensors
             do_tensor_update()
