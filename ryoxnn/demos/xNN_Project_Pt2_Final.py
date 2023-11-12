@@ -40,12 +40,7 @@ import os.path
 import urllib.request
 import gzip
 import math
-try:
-    import cupy as np
-    print("Cupy loaded, using gpu-optimized numpy operations!")
-except ImportError:
-    print("Unable to load cupy, using standard numpy as fallback...")
-    import numpy as np
+import numpy as np
 import numpy
 from ryoxnn.node import *
 from ryoxnn.network import *
@@ -263,12 +258,12 @@ def genTestCNNNet(inputs, labels):
 
     acc = Conv2D(inputs, CN1, 1, 28)
     acc = ConvoNetAdd(acc, B1)
-    acc = ReLu(acc)
+    acc = LeakyReLu(acc)
     acc = SquareMaxPool(acc, 3, 2)
 
     acc = Conv2D(acc, CN2, 1, 15)
     acc = ConvoNetAdd(acc, B2)
-    acc = ReLu(acc)
+    acc = LeakyReLu(acc)
     acc = SquareMaxPool(acc, 3, 2)
 
     acc = VecFrom4D(acc)
@@ -368,7 +363,7 @@ def demo():
 
 
     def learningRate(i):
-        a = 0.1/(1+0.0001*i)
+        a = 0.5/(1+0.0001*i)
         print(a)
         return a
 
