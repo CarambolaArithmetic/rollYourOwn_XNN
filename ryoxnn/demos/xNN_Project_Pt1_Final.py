@@ -45,12 +45,7 @@ import os.path
 import urllib.request
 import gzip
 import math
-try:
-    import cupy as np
-    print("Cupy loaded, using gpu-optimized numpy operations!")
-except ImportError:
-    print("Unable to load cupy, using standard numpy as fallback...")
-    import numpy as np
+import numpy as np
 import numpy
 from ryoxnn.node import *
 from ryoxnn.network import *
@@ -237,7 +232,10 @@ def trainNetwork(network, learning_rate, num_epochs, do_tensor_update, labels_te
     old_epoch_end_time = start_time
     print("Starting training...")
     for j in range(num_epochs):
-        for k in range(DATA_NUM_TRAIN):
+        #TODO: put back to DATA_NUM_TRAIN
+        #for k in range(DATA_NUM_TRAIN):
+        for k in range(20000):
+
 
             # update input/label tensors
             do_tensor_update()
@@ -319,26 +317,26 @@ def updateTensors(A, B, ABList):
 ################################################################################
 # TRAINING#######################################################################
 
+def demo():
+    # create our "placeholder" tensors:
+    # inputs, does not get backpropped
+    X = Tensor(update_rule=None)
 
-# create our "placeholder" tensors:
-# inputs, does not get backpropped
-X = Tensor(update_rule=None)
+    # L for labels, also does not have a backprop rule
+    L = Tensor(update_rule=None)
 
-# L for labels, also does not have a backprop rule
-L = Tensor(update_rule=None)
+    # The network definition. see "genNetwork" function above:
+    network_layers = [784, 1000, 100, 10]
+    batch_size = 100
+    network = genNetwork(X, L, network_layers)
 
-# The network definition. see "genNetwork" function above:
-network_layers = [784, 1000, 100, 10]
-batch_size = 100
-network = genNetwork(X, L, network_layers)
-
-# do the training, using a batch size of 100
-# 2 "epochs" (not actual epochs, just 12000 iterations of batch training).
-# 0.001 learning rate really only works for this batch size smaller batches need smaller rates to prevent exploding.
-# A dynamic learning rate would probably improve this, but there wasn't time to experiment.
-train_specs = trainNetwork(network, 0.001,
-                           1,
-                           do_tensor_update=lambda: updateTensors(
-                               L, X, genBatch(batch_size, train_data, train_labels)),
-                           labels_tensor=L,
-                           inputs_tensor=X)
+    # do the training, using a batch size of 100
+    # 2 "epochs" (not actual epochs, just 12000 iterations of batch training).
+    # 0.001 learning rate really only works for this batch size smaller batches need smaller rates to prevent exploding.
+    # A dynamic learning rate would probably improve this, but there wasn't time to experiment.
+    train_specs = trainNetwork(network, 0.001,
+                            1,
+                            do_tensor_update=lambda: updateTensors(
+                                L, X, genBatch(batch_size, train_data, train_labels)),
+                            labels_tensor=L,
+                            inputs_tensor=X)
