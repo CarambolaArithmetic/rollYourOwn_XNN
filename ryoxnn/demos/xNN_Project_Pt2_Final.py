@@ -211,7 +211,7 @@ def trainNetwork(network, learning_rate, num_epochs, do_tensor_update, labels_te
                 print("---")
                 network.finalize()
             i = i+1
-        acc = checkConvoAccuracy(network, X, L, test_data, test_labels)
+        acc = checkConvoAccuracy(network, inputs_tensor, labels_tensor, test_data, test_labels)
         print()
         print("Accuracy after epoch " + str(j) + ": " + str(acc) + "%")
         epoch_end_time = time.perf_counter()
@@ -364,7 +364,7 @@ def demo():
     L = Tensor(update_rule=None)
 
 
-    network = genCNNNet(X, L)
+    network = genTestCNNNet(X, L)
 
 
     def learningRate(i):
