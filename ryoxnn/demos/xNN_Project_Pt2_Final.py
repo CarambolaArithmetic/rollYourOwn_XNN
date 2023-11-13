@@ -363,7 +363,7 @@ def demo():
 
 
     def learningRate(i):
-        a = 0.5/(1+0.0001*i)
+        a = 0.1/(1+0.0001*i)
         print(a)
         return a
 
