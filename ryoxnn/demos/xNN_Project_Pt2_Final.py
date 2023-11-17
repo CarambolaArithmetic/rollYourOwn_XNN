@@ -179,6 +179,9 @@ def trainNetwork(network, learning_rate, num_epochs, do_tensor_update, labels_te
             do_tensor_update()
             print("ERROR at iteration " + str(i) +
                   ": " + str(network.pure_error()))
+            print("LOSS at iteration " + str(i) +
+                  ": " + str(network.loss()))
+
             if i % 200 == 0:
                 print("    certainty: " +
                       str(certainty(network.get_net_head().getSoftmax())))
@@ -269,9 +272,10 @@ def genTestCNNNet(inputs, labels):
     acc = VecFrom4D(acc)
 
     acc = MatmulWBias(W1, acc)
-    acc = SoftmaxWithLogit(labels, acc)
+    acc = NumericallyStableSoftmaxWithLogit(labels, acc)
 
     network = ErrorWithNormalizationTerms(acc, 0.02)
+    #network.add_normalization_params([CN1,B1,CN2,B2,W1])
     return network
 
 

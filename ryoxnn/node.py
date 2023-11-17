@@ -196,7 +196,57 @@ class SoftmaxWithLogit(Node):
         super().__init__(["labels", "input"])
 
     def _fwd(self):
+        print(self.input.fwd())
+        print(cp.sum(cp.exp(self.input.fwd()), axis=0))
         self.softmax = cp.exp(self.input.fwd()) / \
+            cp.sum(cp.exp(self.input.fwd()), axis=0)
+        return -cp.sum(self.labels.fwd()*cp.log(self.softmax), axis=0)
+
+    def _bck(self, grad):
+        # only propogate to Y, because that's coming in from elsewhere in the net.
+        self.input.bck(lambda: grad*(self.softmax-self.labels.fwd()))
+
+    def getSoftmax(self):
+        """
+        Get output of the softmax
+        """
+        return self.softmax
+
+    def getPredictions(self):
+        """
+        Get 1 x n vector containing predicted labels of network input
+        """
+        return cp.argmax(self.softmax, axis=0)
+
+class NumericallyStableSoftmaxWithLogit(Node):
+    """
+    Node that implements Softmax with logistic regression.
+    """
+
+    def __init__(self, tensor_labels, tensor_input):
+        """
+        Parameters:
+        -----------
+            tensor_input:
+                Node of size m x n
+            tensor_labels:
+                Node of size m x n. bck for it is not called.
+        """
+        self.input = tensor_input
+        self.labels = tensor_labels
+        self.softmax = None
+        super().__init__(["labels", "input"])
+
+    def _fwd(self):
+        maxp = np.argmax(np.abs(self.input.fwd()),axis=0)
+        maxval = np.unravel_index(maxp, self.input.fwd().shape)
+        maxv = np.ones((self.input.fwd().shape[0],1))*self.input.fwd()[maxval]
+        #print(maxv)
+        print(self.input.fwd())
+        print(cp.sum(cp.exp(self.input.fwd()-maxv), axis=0))
+        self.softmax = cp.exp(self.input.fwd() - maxv) / \
+            cp.sum(cp.exp(self.input.fwd()-maxv), axis=0)
+        orig_softmax = cp.exp(self.input.fwd()) / \
             cp.sum(cp.exp(self.input.fwd()), axis=0)
         return -cp.sum(self.labels.fwd()*cp.log(self.softmax), axis=0)
 
@@ -247,14 +297,18 @@ class LeakyReLu(Node):
             Node of size m x n
         """
         self.input = tensor_input
+        self.leakConstant = 0.001
         super().__init__(["input"])
 
     def _fwd(self):
         matt = self.input.fwd()
-        return cp.max(cp.array([matt, 0.1*cp.ones(matt.shape)]), axis=0)
+        #Why this works: relu is leakConstant*x when x <=0;
+        # leakConstant*x > x if and only if x<0 and leakConstant < 1,
+        # which it better be. idiot.
+        return cp.max(cp.array([matt, self.leakConstant*matt]), axis=0)
 
     def _bck(self, grad):
-        self.input.bck(lambda: grad * cp.where(self.value > 0, 1, 0.1))
+        self.input.bck(lambda: grad * cp.where(self.value > 0, 1, self.leakConstant))
 
 
 class Cat(Node):
