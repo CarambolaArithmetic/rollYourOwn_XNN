@@ -168,12 +168,12 @@ def trainNetwork(network, learning_rate, num_epochs, do_tensor_update, labels_te
     i = 0
 
     start_time = time.perf_counter()
-    oldEpochEndTime = start_time
+    old_epoch_end_time = start_time
     print("starting training...")
     for j in range(num_epochs):
         #TODO: put back to DATA_NUM_TRAIN
-        #for k in range(DATA_NUM_TRAIN):
-        for k in range(10000):
+        for k in range(DATA_NUM_TRAIN):
+        #for k in range(10000):
 
             # update input/label tensors
             do_tensor_update()
@@ -300,25 +300,25 @@ def genCNNNet(inputs, labels):
     # acc = accumulator
     acc = Conv2D(inputs, CN1, 1, 28)
     acc = ConvoNetAdd(acc, B1)
-    acc = ReLu(acc)
+    acc = LeakyReLu(acc)
     acc = SquareMaxPool(acc, 3, 2)
 
     acc = Conv2D(acc, CN2, 1, 15)
     acc = ConvoNetAdd(acc, B2)
-    acc = ReLu(acc)
+    acc = LeakyReLu(acc)
     acc = SquareMaxPool(acc, 3, 2)
 
     acc = Conv2D(acc, CN3, 1, 7)
     acc = ConvoNetAdd(acc, B3)
-    acc = ReLu(acc)
+    acc = LeakyReLu(acc)
 
     acc = VecFrom4D(acc)
 
     acc = MatmulWBias(W1, acc)
-    acc = ReLu(acc)
+    acc = LeakyReLu(acc)
     acc = MatmulWBias(W2, acc)
 
-    acc = SoftmaxWithLogit(labels, acc)
+    acc = NumericallyStableSoftmaxWithLogit(labels, acc)
     network = ErrorWithNormalizationTerms(acc, 0.02)
     return network
 
@@ -363,7 +363,7 @@ def demo():
     L = Tensor(update_rule=None)
 
 
-    network = genTestCNNNet(X, L)
+    network = genCNNNet(X, L)
 
 
     def learningRate(i):
