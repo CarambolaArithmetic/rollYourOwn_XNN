@@ -196,8 +196,6 @@ class SoftmaxWithLogit(Node):
         super().__init__(["labels", "input"])
 
     def _fwd(self):
-        print(self.input.fwd())
-        print(cp.sum(cp.exp(self.input.fwd()), axis=0))
         self.softmax = cp.exp(self.input.fwd()) / \
             cp.sum(cp.exp(self.input.fwd()), axis=0)
         return -cp.sum(self.labels.fwd()*cp.log(self.softmax), axis=0)
@@ -303,8 +301,8 @@ class LeakyReLu(Node):
     def _fwd(self):
         matt = self.input.fwd()
         #Why this works: relu is leakConstant*x when x <=0;
-        # leakConstant*x > x if and only if x<0 and leakConstant < 1,
-        # which it better be. idiot.
+        # leakConstant*x > x if and only if x<0 and leakConstant < 1...
+        # which it better be
         return cp.max(cp.array([matt, self.leakConstant*matt]), axis=0)
 
     def _bck(self, grad):

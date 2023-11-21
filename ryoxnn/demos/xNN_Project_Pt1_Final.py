@@ -232,10 +232,7 @@ def trainNetwork(network, learning_rate, num_epochs, do_tensor_update, labels_te
     old_epoch_end_time = start_time
     print("Starting training...")
     for j in range(num_epochs):
-        #TODO: put back to DATA_NUM_TRAIN
-        #for k in range(DATA_NUM_TRAIN):
-        for k in range(20000):
-
+        for k in range(DATA_NUM_TRAIN):
 
             # update input/label tensors
             do_tensor_update()

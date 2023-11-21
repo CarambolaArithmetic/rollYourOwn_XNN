@@ -27,7 +27,6 @@ class ErrorWithNormalizationTerms:
         """
         Get value of the loss function (normalization inclusive).
         """
-        print(self.l2_norm())
         return self.pure_error() + self.l2_norm()
 
     def pure_error(self):

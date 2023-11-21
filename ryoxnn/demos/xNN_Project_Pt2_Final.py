@@ -11,7 +11,8 @@
 #    This script takes no arguments, when run and it will download training data and begin training.
 #
 # DESCRIPTION
-#  This file implements a Convolutional neural network.  it uses a flat learning rate, with stochastic batches of 2 images selected at each iteration via sample-with-replacement.
+#  This file implements a Convolutional neural network.  it uses a Inverse Time Decay learning rate
+#  schedule, with stochastic batches of 2 images selected at each iteration via sample-with-replacement.
 #   in order to improve training speed, the network uses different learning rates for each layer,
 #   with lower layers having higher learning rates to speed up their updates while still allowing the overall
 #   learning rate to be small to avoid divergence. The batch size is so small because the convolution operation takes
@@ -171,17 +172,12 @@ def trainNetwork(network, learning_rate, num_epochs, do_tensor_update, labels_te
     old_epoch_end_time = start_time
     print("starting training...")
     for j in range(num_epochs):
-        #TODO: put back to DATA_NUM_TRAIN
         for k in range(DATA_NUM_TRAIN):
-        #for k in range(10000):
 
             # update input/label tensors
             do_tensor_update()
             print("ERROR at iteration " + str(i) +
                   ": " + str(network.pure_error()))
-            print("LOSS at iteration " + str(i) +
-                  ": " + str(network.loss()))
-
             if i % 200 == 0:
                 print("    certainty: " +
                       str(certainty(network.get_net_head().getSoftmax())))
@@ -199,7 +195,7 @@ def trainNetwork(network, learning_rate, num_epochs, do_tensor_update, labels_te
             # tell network nodes to finalize their cached values, or at least replace them with a new value
             # next time they are needed.
             network.finalize()
-            if i+1 % 10000 == 0:
+            if i % 10000 == 0:
                 all_accuracy = checkConvoAccuracy(
                     network, X, L, test_data, test_labels)
                 learning_data["allAccs"][0].append(i)
@@ -275,7 +271,6 @@ def genTestCNNNet(inputs, labels):
     acc = NumericallyStableSoftmaxWithLogit(labels, acc)
 
     network = ErrorWithNormalizationTerms(acc, 0.02)
-    #network.add_normalization_params([CN1,B1,CN2,B2,W1])
     return network
 
 
