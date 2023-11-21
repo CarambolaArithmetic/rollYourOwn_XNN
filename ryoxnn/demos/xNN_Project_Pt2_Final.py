@@ -197,7 +197,7 @@ def trainNetwork(network, learning_rate, num_epochs, do_tensor_update, labels_te
             network.finalize()
             if i % 10000 == 0:
                 all_accuracy = checkConvoAccuracy(
-                    network, X, L, test_data, test_labels)
+                    network, inputs_tensor, labels_tensor, test_data, test_labels)
                 learning_data["allAccs"][0].append(i)
                 learning_data["allAccs"][1].append(all_accuracy)
                 print("---")
@@ -268,7 +268,7 @@ def genTestCNNNet(inputs, labels):
     acc = VecFrom4D(acc)
 
     acc = MatmulWBias(W1, acc)
-    acc = NumericallyStableSoftmaxWithLogit(labels, acc)
+    acc = SoftmaxWithLogit(labels, acc)
 
     network = ErrorWithNormalizationTerms(acc, 0.02)
     return network
@@ -276,21 +276,20 @@ def genTestCNNNet(inputs, labels):
 
 def genCNNNet(inputs, labels):
 
-    CN1 = Tensor(0.01*np.random.rand(3, 3, 1, 16), update_rule=lambda x, y: x-y)
-    B1 = Tensor(0.01*np.random.rand(28, 28, 16), update_rule=lambda x, y: x-y)
+    CN1 = Tensor(0.01*np.random.rand(3, 3, 1, 16))
+    B1 = Tensor(0.01*np.random.rand(28, 28, 16))
 
-    CN2 = Tensor(0.01*np.random.rand(3, 3, 16, 32),
-                 update_rule=lambda x, y: x-y)
+    CN2 = Tensor(0.01*np.random.rand(3, 3, 16, 32))
+
     # todo: should be 14,14,32
-    B2 = Tensor(0.01*np.random.rand(15, 15, 32), update_rule=lambda x, y: x-y)
+    B2 = Tensor(0.01*np.random.rand(15, 15, 32))
 
-    CN3 = Tensor(0.01*np.random.rand(3, 3, 32, 64),
-                 update_rule=lambda x, y: x-y)
-    B3 = Tensor(0.01*np.random.rand(7, 7, 64),  update_rule=lambda x, y: x-y)
+    CN3 = Tensor(0.01*np.random.rand(3, 3, 32, 64))
+    B3 = Tensor(0.01*np.random.rand(7, 7, 64))
 
     # why 3137 and 101 instead of 3136 and 100? because bias
-    W1 = Tensor(0.01*np.random.rand(100, 3137), update_rule=lambda x, y: x-y)
-    W2 = Tensor(0.01*np.random.rand(10, 101), update_rule=lambda x, y: x-y)
+    W1 = Tensor(0.01*np.random.rand(100, 3137))
+    W2 = Tensor(0.01*np.random.rand(10, 101))
 
     # acc = accumulator
     acc = Conv2D(inputs, CN1, 1, 28)
@@ -313,7 +312,7 @@ def genCNNNet(inputs, labels):
     acc = LeakyReLu(acc)
     acc = MatmulWBias(W2, acc)
 
-    acc = NumericallyStableSoftmaxWithLogit(labels, acc)
+    acc = SoftmaxWithLogit(labels, acc)
     network = ErrorWithNormalizationTerms(acc, 0.02)
     return network
 
@@ -363,7 +362,7 @@ def demo():
 
     def learningRate(i):
         a = 0.1/(1+0.0001*i)
-        print(a)
+        print(f"Learning rate: {a}")
         return a
 
 

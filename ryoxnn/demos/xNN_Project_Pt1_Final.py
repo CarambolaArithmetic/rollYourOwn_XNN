@@ -330,7 +330,7 @@ def demo():
     # do the training, using a batch size of 100
     # 2 "epochs" (not actual epochs, just 12000 iterations of batch training).
     # 0.001 learning rate really only works for this batch size smaller batches need smaller rates to prevent exploding.
-    # A dynamic learning rate would probably improve this, but there wasn't time to experiment.
+    # A dynamic learning rate would probably improve this.
     train_specs = trainNetwork(network, 0.001,
                             1,
                             do_tensor_update=lambda: updateTensors(
