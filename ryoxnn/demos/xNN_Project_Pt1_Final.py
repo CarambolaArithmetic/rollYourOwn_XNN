@@ -32,7 +32,6 @@
 #       the convention of being m x n, where m spans the data for a single image and n is the number of images in the batch
 #       forward pass functions are written using this convention,
 #       so matmul(W,X) represents WxX where W is the weight matrix and X is the set of inputs.
-#       The only exceptions would be where I forgot to do this, which I *hope* is nowhere.
 #
 ################################################################################
 
