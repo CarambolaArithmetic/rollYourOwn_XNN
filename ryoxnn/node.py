@@ -1,7 +1,4 @@
-try:
-    import cupy as np
-except ImportError:
-    import numpy as np
+import numpy as np
 from .math import *
 
 #node.py: Compute graph node definitions. defines tensor operations that can be composed into a neural network and trained using backpropogation.
@@ -18,9 +15,9 @@ class Node:
         """
         Parameters:
         -----------
-        params: 
+        params:
             A list of parameter names to finalize once when finalize() is called on this node.
-        needs_update: 
+        needs_update:
             Whether or not this node (and thus any of its children) needs
             errors propogated to it in the backward pass. This would be false, for
             instance, if all of this node's children were input tensors and not weights.
@@ -43,7 +40,6 @@ class Node:
         self.value = None
         self.set = False
         [self.__dict__[p].finalize() for p in self.params]
-
     def fwd(self):
         """
         Get the forward pass for this node; returning cached value if it exists.
@@ -59,7 +55,7 @@ class Node:
 
         Parameters:
         -----------
-            get_grad: 
+            get_grad:
                 lambda that calculates the gradient from the
                 parent. This avoids having to calculate the gradient unless it is actually needed.
         """
@@ -94,7 +90,7 @@ class Tensor:
     """
     Input tensor.
         Node-like object used for holding a numpy array, for instance weights, input values, labels, etc.
-        implements the same contract as a Node so that parent Nodes can treat it as one. 
+        implements the same contract as a Node so that parent Nodes can treat it as one.
         has its own update rule, which determines how it will update that value when given a
         gradient in the back pass.
     """
@@ -113,7 +109,7 @@ class Tensor:
 
     def fwd(self):
         """
-        analogous to Node.fwd(), this just returns the value of the Tensor. 
+        analogous to Node.fwd(), this just returns the value of the Tensor.
         """
         if self.value.size == 0:
             raise Exception("tensor is unset!")
@@ -161,7 +157,7 @@ class Matmul(Node):
             tensor_weights:
                 Node of size w x m
 
-            tensor_input 
+            tensor_input
                 Node of size m x n where n is the number of inputs in the batch.
         """
         self.weights = tensor_weights
@@ -188,7 +184,7 @@ class SoftmaxWithLogit(Node):
         """
         Parameters:
         -----------
-            tensor_input:  
+            tensor_input:
                 Node of size m x n
             tensor_labels:
                 Node of size m x n. bck for it is not called.
@@ -199,8 +195,11 @@ class SoftmaxWithLogit(Node):
         super().__init__(["labels", "input"])
 
     def _fwd(self):
-        self.softmax = np.exp(self.input.fwd()) / \
-            np.sum(np.exp(self.input.fwd()), axis=0)
+        maxp = np.argmax(np.abs(self.input.fwd()),axis=0)
+        maxval = np.unravel_index(maxp, self.input.fwd().shape)
+        maxv = np.ones((self.input.fwd().shape[0],1))*self.input.fwd()[maxval]
+        self.softmax = np.exp(self.input.fwd() - maxv) / \
+            np.sum(np.exp(self.input.fwd()-maxv), axis=0)
         return -np.sum(self.labels.fwd()*np.log(self.softmax), axis=0)
 
     def _bck(self, grad):
@@ -246,18 +245,22 @@ class LeakyReLu(Node):
         """
         Parameters:
         -----------
-           input: 
-            Node of size m x n  
+           input:
+            Node of size m x n
         """
         self.input = tensor_input
+        self.leakConstant = 0.001
         super().__init__(["input"])
 
     def _fwd(self):
         matt = self.input.fwd()
-        return np.max(np.array([matt, 0.1*np.ones(matt.shape)]), axis=0)
+        #Why this works: relu is leakConstant*x when x <=0;
+        # leakConstant*x > x if and only if x<0 and leakConstant < 1...
+        # which it better be
+        return np.max(np.array([matt, self.leakConstant*matt]), axis=0)
 
     def _bck(self, grad):
-        self.input.bck(lambda: grad * np.where(self.value > 0, 1, 0.1))
+        self.input.bck(lambda: grad * np.where(self.value > 0, 1, self.leakConstant))
 
 
 class Cat(Node):
@@ -272,10 +275,10 @@ class Cat(Node):
     def __init__(self, tensor_input_a, tensor_input_b, axis):
         """
         Parameters:
-        ----------- 
+        -----------
             tensor_input_a:
                 Node of size m x n
-            tensor_input_b: 
+            tensor_input_b:
                 Node of size k x n
 
         """
@@ -473,7 +476,7 @@ class SquareMaxPool(Node):
 
 class VecFrom4D(Node):
     """
-    Node that converts a 4d tensor to a 2d tensor.   
+    Node that converts a 4d tensor to a 2d tensor.
     """
 
     def __init__(self, tensor_input):
@@ -500,9 +503,9 @@ class ConvoNetAdd(Node):
         """
         Parameters:
         -----------
-            tensor_input: 
+            tensor_input:
                 Node of size "height x width x channels x batch (h,w,c,n)"
-            tensor_bias: 
+            tensor_bias:
                 Node of size "height x width x channels (h,w,c)"
         """
         self.input = tensor_input

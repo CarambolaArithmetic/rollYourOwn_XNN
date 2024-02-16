@@ -1,9 +1,6 @@
-try:
-    import cupy as np
-except ImportError:
-    import numpy as np
+import numpy as np
 
-# math.py: helper functions 
+# math.py: helper functions
 
 def get_clipped(square_arr_4d, reduce_by):
     """
@@ -43,13 +40,13 @@ def paddingSize(k, i, s, l):
     """
     Parameters
     __________
-    k : 
+    k :
         kernel size
-    i : 
+    i :
         input size
-    s : 
+    s :
         strides
-    l : 
+    l :
         desired output size
         TODO: there might need to be a floor/ceiling function in here, but
             Python will alert user if the sizes are wrong.

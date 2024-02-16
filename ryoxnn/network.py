@@ -12,10 +12,10 @@ class ErrorWithNormalizationTerms:
         """
         Parameters
         ----------
-            net_head: 
+            net_head:
                 the loss function or head of the network, such as softmax cross entropy.
                 in other words, the entire network goes in this parameter.
-            lamb_da: 
+            lamb_da:
                 The normalization rate. Also known as lambda, it is a numerical constant. not an anonymous function.
         """
         self.net_head = net_head
@@ -38,7 +38,7 @@ class ErrorWithNormalizationTerms:
         return (1/n)*sum(errors)
 
     def l2_norm(self):
-        return self.lamb_da*np.sum([np.sum(W*W) for W in self.params_list])
+        return self.lamb_da*np.sum([np.sum(W.fwd()*W.fwd()) for W in self.params_list])
 
     def add_normalization_params(self, weights):
         """
